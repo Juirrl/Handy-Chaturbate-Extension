@@ -21,18 +21,21 @@ Debug Mode: The app listens for debug messages in the chaturbate chat window. If
 Sync status: The app uploads a pattern file to the handy server and syncs the server time on startup. If the sync did not work check your connection status, open the popup, and click sync.  
   
 Action: Shows what command was last sent to the handy.  
-Error Messages: Displays any error messages in communicating with the handy server. A few error messages are normal, the app will attempt to resend the failed command. If frequent error messages  
-occur check your connection.  
+Error Messages: Displays any error messages in communicating with the handy server. A few error messages are normal, the app will attempt to resend the failed command. If frequent error messages occur check your connection.  
   
 You will need a chaturbate app or bot to track tips and send commands to the handy.  
 Commands must be sent with the cb.log command.  
 Valid commands are:  
 Handy:Stop  
 Handy:Set Level:[0-7]  
-Handy:Set Pattern:["Head tease", "Fast down, slow up", "Slow down, fast up", "Alternating top & bottom", "Alternating speed", "Alternating long and short",  
-			"Gradually stroke longer and shorter", "Gradually speed up and slow down"]  
+Handy:Set Pattern:["Head tease", "Fast down, slow up", "Slow down, fast up", "Alternating top & bottom", "Alternating speed", "Alternating long and short", "Gradually stroke longer and shorter", "Gradually speed up and slow down"]  
   
 An example app should be in the chaturbate system, search for handy.
+
+## Known Issues
+
+There is a pause while switching between modes, IE going from stready strokes to a pattern or vice versa. This is a limitation in the current handy firmware.
+There is no option to add your own patterns since the SHA256 key for the pattern file is hard coded into the extension.
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
