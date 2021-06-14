@@ -1,0 +1,37 @@
+{
+    "name": "Handy Chaturbate Extension",
+    "version": "0.2",
+    "manifest_version": 2,
+    "permissions": [
+		"storage",
+		"unlimitedStorage",
+		"webRequest",
+		"*://testbed.cb.dev/",
+		"*://chaturbate.com/"
+    ],
+    "browser_action": {
+        "default_popup": "popup.html",
+        "default_title": "theHandy Controller"
+    },
+    "background": {
+        "scripts": [
+            "background.js"
+        ]
+    },
+	"content_scripts": [{
+		"matches": ["*://*.cb.dev/b/*", "*://chaturbate.com/b/*"],
+		"js": [
+			"jquery.js",
+			"content.js"
+		]
+	}],
+	"web_accessible_resources": [
+		"overlay.html",
+		"jquery.js",
+		"ion.rangeSlider.js",
+		"ion.rangeSlider.css",
+		"styles.css",
+		"patterns.csv"
+	]
+}
+
