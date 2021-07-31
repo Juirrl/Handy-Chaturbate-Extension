@@ -34,8 +34,9 @@ An example app should be in the chaturbate system, search for handy.
 
 ## Known Issues
 
-There is a pause while switching between modes, IE going from stready strokes to a pattern or vice versa. This is a limitation in the current handy firmware.
-There is no option to add your own patterns since the SHA256 key for the pattern file is hard coded into the extension.
+There is a pause while switching between modes, IE going from stready strokes to a pattern or vice versa. This is a limitation in the current handy firmware. As a result the example app on chaturbate no longer uses patterns.
+There is no option to add your own patterns since the SHA256 key for the pattern file is hard coded into the extension.  
+There's no off switch. Currently when you run chrome with the extension installed it syncs the server time and uploads the pattern script, then constantly pings the status of your handy whether you intend to use it or not.
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

@@ -13,7 +13,9 @@ class Background {
 			contentScriptCount: 0,
 			paused: false,
 			mode: -1, // These are the theoretical things the machine should be doing
+			levelEntry: -1,
 			level: -1,
+			step: -1,
 			pattern: -1,
 			strokeStart: -1,
 			strokeStop: -1,
@@ -95,8 +97,8 @@ class Background {
 		chrome.storage.onChanged.addListener(function(changes, namespace) {
 			for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
 				if(key === 'levelMatrix') {
-					window.levelMatrix = newValue;
-					if ( window.backgroundStatus.mode == 0 ) window.self.startAutomatic(window.backgroundStatus.level);
+					window.self.onLevelMatrixChange(newValue);
+
 				}
 				if(key === 'masterStroke') window.masterStroke = newValue;
 				if(key === 'connectionKey') {
@@ -110,20 +112,45 @@ class Background {
 		window.self.syncPrepare();
     }
 	
+	onLevelMatrixChange(newValue) {
+		if ( window.backgroundStatus.mode == 0 &&  window.backgroundStatus && ! window.backgroundStatus.paused ) {
+			window.self.startAutomatic(window.backgroundStatus.level);
+		}
+		window.levelMatrix = newValue;
+		
+	}
+	
 	getDefaultMasterStroke() {
 		return { strokeStart: 0, strokeStop: 100 };
 	}
 	
+	getDefaultLevelZeroMatrix() {
+		return [
+
+		];
+	}
+	
 	getDefaultLevelMatrix() {
 		return [
-			{ strokeStart: 0, strokeStop: 30, velocity: 30 },
-			{ strokeStart: 0, strokeStop: 40, velocity: 40 },
-			{ strokeStart: 0, strokeStop: 50, velocity: 50 },
-			{ strokeStart: 0, strokeStop: 60, velocity: 60 },
-			{ strokeStart: 0, strokeStop: 70, velocity: 70 },
-			{ strokeStart: 0, strokeStop: 80, velocity: 80 },
-			{ strokeStart: 0, strokeStop: 85, velocity: 85 },
-			{ strokeStart: 0, strokeStop: 95, velocity: 95 },
+			[ 
+				{ strokeStart: 15, strokeStop: 55, velocity: 40, delay: 10 },
+				{ strokeStart: 35, strokeStop: 75, velocity: 40, delay: 10  },
+				{ strokeStart: 55, strokeStop: 95, velocity: 40, delay: 10 },
+				{ strokeStart: 15, strokeStop: 85, velocity: 50, delay: 0  }
+			],
+			[ { strokeStart: 5, strokeStop: 80, velocity: 60, delay: 0 } ],
+			[ { strokeStart: 15, strokeStop: 85, velocity: 75, delay: 0 } ],
+			[ { strokeStart: 5, strokeStop: 95, velocity: 95, delay: 0 } ],
+			[ { strokeStart: 0, strokeStop: 100, velocity: 70, delay: 0 } ],
+			[ { strokeStart: 0, strokeStop: 35, velocity: 70, delay: 0 } ],
+			[ { strokeStart: 40, strokeStop: 50, velocity: 100, delay: 0 } ],
+			[ { strokeStart: 0, strokeStop: 100, velocity: 40, delay: 0 } ],
+			[ { strokeStart: 0, strokeStop: 100, velocity: 40, delay: 0 } ],
+			[ { strokeStart: 0, strokeStop: 100, velocity: 40, delay: 0 } ],
+			[ { strokeStart: 0, strokeStop: 100, velocity: 40, delay: 0 } ],
+			[ { strokeStart: 0, strokeStop: 100, velocity: 40, delay: 0 } ],
+			[ { strokeStart: 0, strokeStop: 100, velocity: 40, delay: 0 } ],
+			[ { strokeStart: 0, strokeStop: 100, velocity: 40, delay: 0 } ],
 		];
 	}
 	
@@ -899,6 +926,7 @@ class Background {
 	
 	cancelCurrentRequests() {
 		for ( var i = 0 ; i < window.xhrRequests.length ; i++ ) window.xhrRequests[i].abort();
+		clearTimeout(window.stepTimeout);
 		clearTimeout(window.patternTimeout);
 		window.xhrRequests = [];
 	}
@@ -958,15 +986,56 @@ class Background {
     }
 		
     startAutomatic(level) {
-		var levelEntry = window.levelMatrix[level];
-		if ( levelEntry == undefined ) return;
+		function shortenLevelEntry(levelEntry) {
+			var newLevelEntry = [];
+			for ( var i=0; i < levelEntry.length; i++ ) {
+				if ( levelEntry[i].delay > 0 ) {
+					newLevelEntry[i] = levelEntry[i];
+				} else {
+					break;
+				}
+			}
+			/*
+			console.log('----Start Automatic------');
+			console.log(newLevelEntry);
+			console.log(newLevelEntry.length);
+			console.log('-------------------------');
+			*/
+			if ( newLevelEntry.length == 0 ) newLevelEntry[0] = levelEntry[0];
+			return newLevelEntry;
+		}
 		
+		var levelEntry = shortenLevelEntry( window.levelMatrix[level] );
+		if ( levelEntry == undefined || levelEntry.length <= 0 ) {
+			console.log('Error: Invalid Level Entry');
+			return;
+		}
+		
+		window.backgroundStatus.levelEntry = levelEntry;
 		window.backgroundStatus.level = level;
+		window.backgroundStatus.step = -1;
 		window.backgroundStatus.mode = 0;
 		window.backgroundStatus.pattern = -1;
-		window.backgroundStatus.strokeStart = levelEntry.strokeStart;
-		window.backgroundStatus.strokeStop = levelEntry.strokeStop;
-		window.backgroundStatus.velocity = levelEntry.velocity;
+		
+		window.self.startAutomaticStep();
+	}
+		
+	startAutomaticStep() {
+		
+		var levelEntry = window.backgroundStatus.levelEntry;
+		
+		var step = window.backgroundStatus.step;
+		step++;
+		if ( step >= levelEntry.length ) step = 0;
+		window.backgroundStatus.step = step;
+		
+		var levelStep = levelEntry[step];
+		console.log('--Start Automatic Step--');
+		console.log(levelEntry);
+		console.log('------------------------');
+		window.backgroundStatus.strokeStart = levelStep.strokeStart;
+		window.backgroundStatus.strokeStop = levelStep.strokeStop;
+		window.backgroundStatus.velocity = levelStep.velocity;
 		window.self.sendMessageToContent( { "updateOverlay": window.backgroundStatus } );
 		
 		window.self.cancelCurrentRequests();
@@ -975,16 +1044,20 @@ class Background {
 		window.self.handyGetMode(function(mode) {
 			if ( mode == 0 ) {
 				window.self.handyStartSlide();
-				window.self.handySetVelocity(levelEntry.velocity);
-				window.self.handySetSlide(levelEntry.strokeStart, levelEntry.strokeStop);
+				window.self.handySetVelocity(levelStep.velocity);
+				window.self.handySetSlide(levelStep.strokeStart, levelStep.strokeStop);
 			} else {
 				window.self.handySetMode(0, function() {
 					window.self.handyStartSlide();
-					window.self.handySetVelocity(levelEntry.velocity);
-					window.self.handySetSlide(levelEntry.strokeStart, levelEntry.strokeStop);
+					window.self.handySetVelocity(levelStep.velocity);
+					window.self.handySetSlide(levelStep.strokeStart, levelStep.strokeStop);
 				});
 			}
 		});
+		if ( levelEntry.length > 1 && levelStep.delay > 0 ) {
+			window.stepTimeout = setTimeout(window.self.startAutomaticStep, levelStep.delay * 1000 );
+		}
+		
 	}
 	
     setPattern(pattern) {
@@ -1061,10 +1134,13 @@ class Background {
 		// I wonder if this can be linked back to the manifest list
 		// query doesn't seem to accept regex expressions, so have to loop through urls
 		const urls = ["*://testbed.cb.dev/b/*", "*://chaturbate.com/b/*"];
+		if ( urls == undefined ) return;
 		for ( var i=0 ; i < urls.length; i++ ) {
 			chrome.tabs.query({url: urls[i]}, function(tabs) { 
-				for ( var j=0 ; j < tabs.length; j++ ) {
-					chrome.tabs.sendMessage(tabs[j].id, message, callback);
+				if ( tabs != undefined ) {
+					for ( var j=0 ; j < tabs.length; j++ ) {
+						chrome.tabs.sendMessage(tabs[j].id, message, callback);
+					}
 				}
 			});
 		}
