@@ -160,88 +160,50 @@ function updateOverlay(backgroundStatus) {
 function sendDebugMessage() {
 	// This function isn't very robust. For one this isn't an API, chaturbate can change these elements
 	// without notification. And for two we're assuming the first element in these arrays is the one we want.
-	function trySendDebug(tries) { // It takes several seconds after loading the page before the send-button is active.
-		if ( debugMode || tries > 50) return;
-		var temp = $(".customInput").html();
-		$(".customInput").html("/debug");
-		$(".send-button").click();
-		$(".customInput").html(temp); // This doesn't work that well since it moves the cursor the beginning of the chatbox
-		setTimeout(trySendDebug, 500, tries+1);
-	}
-	if ( window.location.href.includes('testbed') ) {
-		var chatInput = $( "#chat_input" );
-		if ( chatInput.length > 0 ) {
-			var oldInput = chatInput.val();
-			chatInput.val('/debug');
-			var sendButton = document.getElementsByClassName("send_message_button");
-			if ( sendButton.length > 0 ) {
-				sendButton[0].click();
-			} else {
-
-			}
-			chatInput.val(oldInput);
-		}
-	} else {
-		// The default is to assume we're on the main chaturbate page
-		if ( window.location.href.includes('chaturbate') ) {
-			trySendDebug(1);
-		}
-	}
-
+	trySendDebug(1);
 }
-
-function sendTestMessage() {
-	// This function isn't very robust. For one this isn't an API, chaturbate can change these elements
-	// without notification. And for two we're assuming the first element in these arrays is the one we want.
-
-	if ( window.location.href.includes('chaturbate') ) {
-		$(".customInput").html('blueberries');
-		document.getElementsByClassName("send-button")[0].click();
-		$(".send-button").click();
-	} else {
-		var chatInputTestbed = $( "#chat_input" );
-		var oldInput = chatInput.val();
-		if ( chatInputTestbed.length > 0 ) {
-			chatInputTestbed.val('/debug');
-			var sendButtonTestbed = document.getElementsByClassName("send_message_button");
-			if ( sendButtonTestbed.length > 0 ) {
-				sendButtonTestbed[0].click();
-			} 
-			chatInput.val(oldInput);
-		}
-	}
-}
-
 		 
 var chatLoadedObserver = new MutationObserver(function (mutations, observer) {
     mutations.forEach(function (mutation) {
 		chrome.storage.sync.get('broadcasterName', function(broadcasterName) {
 			
-			if ( broadcasterName == null ) return;
+			if ( broadcasterName == null ) {
+				console.log('Broadcaster name = null');
+				return;
+			}
+			console.log('Broadcaster name = ' + broadcasterName );
+			sleep(2000);
 			var chatSelector;
-			if ( window.location.href.includes('testbed') ) {
-				chatSelector = $(".chat-list");
-			} else {
-				chatSelector = $(".msg-list-fvm");
-			}
+			chatSelector = $(".msg-list-fvm");
 			var url = document.location.href;
-			if (chatSelector.length > 0 && url.length > 0) {
-				// Select the node element.
-				var target = chatSelector[0];
-				
-				var chatboxNode = document.getElementById('chatboxStatusText');
-				if ( chatboxNode != null ) {
-					chatboxNode.textContent = 'Detected';
-					chatboxNode.style.color = 'green';
-				}
-
-				// Pass in the target node, as well as the observer options
-				tipFinder.observe(target, config);
-				// Unregister chatLoadedObserver. We don't need to check for the chat element anymore.
-				observing = true;
-				//sendDebugMessage();
-				observer.disconnect();
+			
+			function sleep(ms) {
+				return new Promise(resolve => setTimeout(resolve, ms));
 			}
+			
+			sleep(500).then(() => {
+				if (chatSelector.length > 0 && url.length > 0) {
+					console.log('Chat window found' );
+					// Select the node element.
+					var target = chatSelector[0];
+					var chatboxNode = document.getElementById('chatboxStatusText');
+					if ( chatboxNode != null ) {
+						chatboxNode.textContent = 'Detected';
+						chatboxNode.style.color = 'green';
+						console.log('status set' )
+					} else {
+						console.log('Failed to set status' )
+						console.log(chatboxNode)
+					}
+
+					// Pass in the target node, as well as the observer options
+					tipFinder.observe(target, config);
+					// Unregister chatLoadedObserver. We don't need to check for the chat element anymore.
+					observing = true;
+					//sendDebugMessage();
+					observer.disconnect();
+				};
+			});
 		});
     })
 });
@@ -257,9 +219,11 @@ var tipFinder = new MutationObserver(function (mutations)
     // A chat message would be an added node
 		mutation.addedNodes.forEach(function (addedNode) {
 			var prefix = "DEBUG: ";
+			/*
 			if ( window.location.href.includes('testbed') ) {
 				prefix = 'Debug: ';
 			}
+			*/
 			const levelSuffix = 'Handy Set Level:';
 			const patternSuffix = 'Handy Set Pattern:';
 			const stopSuffix = 'Handy:Stop';

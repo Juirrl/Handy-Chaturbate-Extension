@@ -2,6 +2,7 @@ class Background {
 	
     constructor() {
 		
+
 		window.tipList = undefined;
 		window.xhrRequests = [];
 		var self = this;
@@ -110,6 +111,13 @@ class Background {
 		
 		setInterval( window.self.checkConnected, 1500);
 		window.self.syncPrepare();
+		
+		function gotDirectoryEntry(directoryEntry) {
+		  console.log(directoryEntry);
+		}
+
+		var gettingEntry = chrome.runtime.getPackageDirectoryEntry();
+		gettingEntry.then(gotDirectoryEntry);
     }
 	
 	onLevelMatrixChange(newValue) {
